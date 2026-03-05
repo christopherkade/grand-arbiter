@@ -1,121 +1,53 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
-import { clientSearch, type RuleSection } from "../lib/search";
+import { clientSearch, type RuleSection } from "@/lib/search";
+import { getFavoriteRules, saveFavoriteRules } from "@/lib/favorites";
+import { SiteHeader } from "./components/SiteHeader";
+import { HomeTopActions } from "./components/HomeTopActions";
+import { SearchControls } from "./components/SearchControls";
+import { SearchStatus } from "./components/SearchStatus";
+import { RuleResultsAccordion } from "./components/RuleResultsAccordion";
 
 export default function Home() {
+  const SEARCH_QUERY_PARAM = "q";
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<RuleSection[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set());
   const [focusedRuleIndex, setFocusedRuleIndex] = useState(-1);
   const [suggestion, setSuggestion] = useState<string>("");
+  const [favoriteRules, setFavoriteRules] = useState<RuleSection[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const ruleRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  // Auto-focus input on page load
-  useEffect(() => {
-    if (searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, []);
+  const quickKeywords = [
+    "Trample",
+    "Flying",
+    "Hexproof",
+    "Deathtouch",
+    "Vigilance",
+    "Lifelink",
+    "Haste",
+  ];
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Focus search with '/' key
-      if (e.key === "/" && document.activeElement !== searchInputRef.current) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        return;
-      }
+  const updateSearchParam = (value: string) => {
+    const url = new URL(window.location.href);
+    const trimmedValue = value.trim();
 
-      // Clear search with Escape
-      if (e.key === "Escape") {
-        if (searchTerm) {
-          clearSearch();
-        }
-        return;
-      }
-
-      // Navigate results with arrow keys (only when search input is not focused)
-      if (
-        results.length > 0 &&
-        document.activeElement !== searchInputRef.current
-      ) {
-        if (e.key === "ArrowDown") {
-          e.preventDefault();
-          setFocusedRuleIndex((prev) => {
-            const newIndex = prev < results.length - 1 ? prev + 1 : 0;
-            ruleRefs.current[newIndex]?.focus();
-            return newIndex;
-          });
-        } else if (e.key === "ArrowUp") {
-          e.preventDefault();
-          setFocusedRuleIndex((prev) => {
-            const newIndex = prev > 0 ? prev - 1 : results.length - 1;
-            ruleRefs.current[newIndex]?.focus();
-            return newIndex;
-          });
-        } else if (e.key === "Enter" && focusedRuleIndex >= 0) {
-          e.preventDefault();
-          toggleRuleExpansion(results[focusedRuleIndex].id);
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [searchTerm, results, focusedRuleIndex]);
-
-  // Reset focused rule index when results change
-  useEffect(() => {
-    setFocusedRuleIndex(-1);
-    ruleRefs.current = results.map(() => null);
-  }, [results]);
-
-  const searchRules = async (query: string) => {
-    // Only search if query has at least 3 characters
-    if (!query.trim() || query.trim().length < 3) {
-      setResults([]);
-      setSuggestion("");
-      return;
+    if (trimmedValue) {
+      url.searchParams.set(SEARCH_QUERY_PARAM, value);
+    } else {
+      url.searchParams.delete(SEARCH_QUERY_PARAM);
     }
 
-    setIsLoading(true);
-    try {
-      const data = await clientSearch(query);
-      setResults(data.results || []);
-      setSuggestion(data.suggestion || "");
-      // Auto-expand all results when new search is performed
-      const newExpanded = new Set<string>(
-        (data.results || []).map((rule: RuleSection) => rule.id),
-      );
-      setExpandedRules(newExpanded);
-    } catch (error) {
-      console.error("Search error:", error);
-      setResults([]);
-      setSuggestion("");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-
-    // Clear previous timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    // Set new timeout for debounced search
-    debounceTimeoutRef.current = setTimeout(() => {
-      searchRules(value);
-    }, 500); // Increased debounce time to 500ms
+    window.history.replaceState(
+      {},
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
   };
 
   const toggleRuleExpansion = (ruleId: string) => {
@@ -130,228 +62,221 @@ export default function Home() {
     });
   };
 
-  const highlightText = (text: string, searchTerm: string) => {
-    const trimmedSearchTerm = searchTerm.trim();
-    const escapedSearchTerm = trimmedSearchTerm.replace(
-      /[.*+?^${}()|[\]\\]/g,
-      "\\$&",
-    );
-    const searchSplitRegex = trimmedSearchTerm
-      ? new RegExp(`(${escapedSearchTerm})`, "gi")
-      : null;
-    const searchExactRegex = trimmedSearchTerm
-      ? new RegExp(`^${escapedSearchTerm}$`, "i")
-      : null;
-
-    const highlightPart = (partText: string, keyPrefix: string) => {
-      if (!searchSplitRegex || !searchExactRegex) {
-        return [partText];
-      }
-
-      return partText
-        .split(searchSplitRegex)
-        .filter((part) => part.length > 0)
-        .map((part, index) =>
-          searchExactRegex.test(part) ? (
-            <mark
-              key={`${keyPrefix}-mark-${index}`}
-              className={styles.highlight}
-            >
-              {part}
-            </mark>
-          ) : (
-            <span key={`${keyPrefix}-text-${index}`}>{part}</span>
-          ),
-        );
-    };
-
-    const ruleIdentifierRegex = /(\b\d{3}\.\d+[a-z]?\b)/gi;
-
-    return text
-      .split(ruleIdentifierRegex)
-      .filter((part) => part.length > 0)
-      .map((part, index) => {
-        const content = highlightPart(part, `part-${index}`);
-
-        if (/^\d{3}\.\d+[a-z]?$/i.test(part)) {
-          return <strong key={`identifier-${index}`}>{content}</strong>;
-        }
-
-        return <span key={`text-${index}`}>{content}</span>;
-      });
-  };
-
-  const quickKeywords = [
-    "Trample",
-    "Flying",
-    "Hexproof",
-    "Deathtouch",
-    "Vigilance",
-    "Lifelink",
-    "Haste",
-  ];
-
-  const handleQuickKeywordClick = (keyword: string) => {
-    setSearchTerm(keyword);
-    // Clear existing debounce timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+  const searchRules = async (query: string) => {
+    if (!query.trim() || query.trim().length < 3) {
+      setResults([]);
+      setSuggestion("");
+      return;
     }
-    // Trigger immediate search
-    searchRules(keyword);
+
+    setIsLoading(true);
+    try {
+      const data = await clientSearch(query);
+      setResults(data.results || []);
+      setSuggestion(data.suggestion || "");
+      setExpandedRules(
+        new Set<string>(
+          (data.results || []).map((rule: RuleSection) => rule.id),
+        ),
+      );
+    } catch (error) {
+      console.error("Search error:", error);
+      setResults([]);
+      setSuggestion("");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const clearSearch = () => {
     setSearchTerm("");
+    updateSearchParam("");
     setResults([]);
     setSuggestion("");
     setFocusedRuleIndex(-1);
-    // Clear debounce timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
-    // Focus back to input
-    if (searchInputRef.current) {
-      searchInputRef.current.focus();
+    searchInputRef.current?.focus();
+  };
+
+  // Auto-focus input on page load
+  useEffect(() => {
+    searchInputRef.current?.focus();
+  }, []);
+
+  // Reset focused rule index when results change
+  useEffect(() => {
+    setFocusedRuleIndex(-1);
+    ruleRefs.current = results.map(() => null);
+  }, [results]);
+
+  // Load favorites from localStorage.
+  useEffect(() => {
+    setFavoriteRules(getFavoriteRules());
+  }, []);
+
+  // Hydrate search term from shared URL on first load.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const queryFromUrl = params.get(SEARCH_QUERY_PARAM);
+
+    if (!queryFromUrl) {
+      return;
     }
+
+    setSearchTerm(queryFromUrl);
+    searchRules(queryFromUrl);
+  }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key === "/" &&
+        document.activeElement !== searchInputRef.current
+      ) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      if (event.key === "Escape") {
+        if (searchTerm) {
+          setSearchTerm("");
+          updateSearchParam("");
+          setResults([]);
+          setSuggestion("");
+          setFocusedRuleIndex(-1);
+          if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+          }
+          searchInputRef.current?.focus();
+        }
+        return;
+      }
+
+      if (
+        results.length > 0 &&
+        document.activeElement !== searchInputRef.current
+      ) {
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          setFocusedRuleIndex((prev) => {
+            const newIndex = prev < results.length - 1 ? prev + 1 : 0;
+            ruleRefs.current[newIndex]?.focus();
+            return newIndex;
+          });
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          setFocusedRuleIndex((prev) => {
+            const newIndex = prev > 0 ? prev - 1 : results.length - 1;
+            ruleRefs.current[newIndex]?.focus();
+            return newIndex;
+          });
+        } else if (event.key === "Enter" && focusedRuleIndex >= 0) {
+          event.preventDefault();
+          toggleRuleExpansion(results[focusedRuleIndex].id);
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [focusedRuleIndex, results, searchTerm]);
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    updateSearchParam(value);
+
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      searchRules(value);
+    }, 500);
+  };
+
+  const isRuleFavorited = (ruleId: string) => {
+    return favoriteRules.some((rule) => rule.id === ruleId);
+  };
+
+  const toggleFavoriteRule = (rule: RuleSection) => {
+    setFavoriteRules((prev) => {
+      const isFavorited = prev.some(
+        (favoriteRule) => favoriteRule.id === rule.id,
+      );
+      const updated = isFavorited
+        ? prev.filter((favoriteRule) => favoriteRule.id !== rule.id)
+        : [...prev, rule];
+
+      saveFavoriteRules(updated);
+      return updated;
+    });
+  };
+
+  const handleQuickKeywordClick = (keyword: string) => {
+    setSearchTerm(keyword);
+    updateSearchParam(keyword);
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    searchRules(keyword);
   };
 
   const applySuggestion = (suggestedTerm: string) => {
     setSearchTerm(suggestedTerm);
+    updateSearchParam(suggestedTerm);
     setSuggestion("");
-    // Clear debounce timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
-    // Trigger immediate search
     searchRules(suggestedTerm);
   };
 
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>Grand Arbiter</h1>
-          <p className={styles.subtitle}>
-            Your comprehensive Magic: The Gathering rules lookup tool. <br />
-            Search for any keyword to find relevant rule sections instantly.
-          </p>
-        </div>
+        <SiteHeader
+          subtitle={
+            <>
+              Your comprehensive Magic: The Gathering rules lookup tool. <br />
+              Search for any keyword to find relevant rule sections instantly.
+            </>
+          }
+        />
 
-        <div className={styles.searchContainer}>
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchTerm}
-            onChange={handleInputChange}
-            placeholder="Search for rules (e.g., trample, flying, commander...)"
-            className={styles.searchInput}
-          />
-          {searchTerm && (
-            <button
-              onClick={clearSearch}
-              className={styles.clearButton}
-              aria-label="Clear search"
-            >
-              ✕
-            </button>
-          )}
-          {searchTerm.length > 0 && searchTerm.length < 3 && (
-            <div className={styles.searchHint}>
-              Type at least 3 characters to search
-            </div>
-          )}
+        <HomeTopActions favoriteCount={favoriteRules.length} />
 
-          {/* Keyboard hints - show when no search term */}
-          {!searchTerm && (
-            <div className={styles.keyboardHints}>
-              <span className={styles.hint}>
-                Press <kbd>/</kbd> to focus search
-              </span>
-              <span className={styles.hint}>
-                Use <kbd>↑</kbd>
-                <kbd>↓</kbd> to navigate results
-              </span>
-              <span className={styles.hint}>
-                Press <kbd>Enter</kbd> to expand/collapse
-              </span>
-              <span className={styles.hint}>
-                Press <kbd>Esc</kbd> to clear
-              </span>
-            </div>
-          )}
+        <SearchControls
+          searchInputRef={searchInputRef}
+          searchTerm={searchTerm}
+          onInputChange={handleInputChange}
+          onClearSearch={clearSearch}
+          quickKeywords={results.length === 0 ? quickKeywords : []}
+          onQuickKeywordClick={handleQuickKeywordClick}
+        />
 
-          {/* Quick keywords - hide when search has results */}
-          {results.length === 0 && !searchTerm && (
-            <div className={styles.quickKeywords}>
-              {quickKeywords.map((keyword) => (
-                <button
-                  key={keyword}
-                  className={styles.quickKeyword}
-                  onClick={() => handleQuickKeywordClick(keyword)}
-                >
-                  {keyword}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <SearchStatus
+          isLoading={isLoading}
+          resultsLength={results.length}
+          searchTerm={searchTerm}
+          suggestion={suggestion}
+          onApplySuggestion={applySuggestion}
+        />
 
-        {isLoading && <div className={styles.loading}>Searching rules...</div>}
-
-        {/* Search result count */}
-        {!isLoading && results.length > 0 && (
-          <div className={styles.resultCount}>
-            Found {results.length} rule{results.length === 1 ? "" : "s"} for
-            &quot;{searchTerm}&quot;
-          </div>
-        )}
-
-        {/* Did you mean suggestion */}
-        {!isLoading && suggestion && results.length === 0 && (
-          <div className={styles.suggestion}>
-            Did you mean{" "}
-            <button
-              className={styles.suggestionLink}
-              onClick={() => applySuggestion(suggestion)}
-            >
-              &quot;{suggestion}&quot;
-            </button>
-            ?
-          </div>
-        )}
-
-        <div className={styles.results}>
-          {results.map((rule, index) => (
-            <div key={index} className={styles.ruleSection}>
-              <button
-                ref={(el) => {
-                  ruleRefs.current[index] = el;
-                }}
-                className={styles.ruleHeader}
-                onClick={() => toggleRuleExpansion(rule.id)}
-                aria-expanded={expandedRules.has(rule.id)}
-                onFocus={() => setFocusedRuleIndex(index)}
-              >
-                <h3 className={styles.ruleTitle}>
-                  {highlightText(rule.title, searchTerm)}
-                </h3>
-                <span
-                  className={`${styles.expandIcon} ${
-                    expandedRules.has(rule.id) ? styles.expanded : ""
-                  }`}
-                >
-                  ▼
-                </span>
-              </button>
-              {expandedRules.has(rule.id) && (
-                <div className={styles.ruleContent}>
-                  {highlightText(rule.content, searchTerm)}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <RuleResultsAccordion
+          results={results}
+          expandedRules={expandedRules}
+          searchTerm={searchTerm}
+          ruleRefs={ruleRefs}
+          onToggleRuleExpansion={toggleRuleExpansion}
+          onRuleFocus={setFocusedRuleIndex}
+          isRuleFavorited={isRuleFavorited}
+          onToggleFavorite={toggleFavoriteRule}
+        />
 
         {searchTerm &&
           searchTerm.length >= 3 &&

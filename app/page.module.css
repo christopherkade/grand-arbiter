@@ -15,12 +15,13 @@
   flex-direction: column;
   align-items: center;
   gap: 2rem;
+  padding-top: 3.5rem;
 }
 
 .header {
   text-align: center;
   color: white;
-  margin-bottom: 1rem;
+  margin-bottom: 1rem;  
 }
 
 .title {
@@ -77,6 +78,81 @@
 .searchContainer {
   width: 100%;
   position: relative;
+}
+
+.topActions {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.viewToggleButton {
+  background: transparent;
+  color: #d4af37;
+  border: 1px solid white;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.viewToggleButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.viewToggleButton:focus {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+.favoritesLinkButton {
+  background: transparent;
+  color: #d4af37;
+  border: 1px solid white;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.favoritesLinkButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.favoritesLinkButton:focus {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+.rawView {
+  width: 100%;
+}
+
+.rawToolbar {
+  margin-bottom: 1rem;
+}
+
+.rawFrame {
+  width: 100%;
+  min-height: 75vh;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 12px;
+  background: white;
 }
 
 .searchInput {
@@ -273,6 +349,38 @@
   flex: 1;
 }
 
+.ruleHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.favoriteButton {
+  border: none;
+  background: transparent;
+  color: #8b6914;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.125rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.favoriteButton:hover {
+  color: #d4af37;
+  background: rgba(212, 175, 55, 0.15);
+}
+
+.favoriteButton:focus {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+.favoriteActive {
+  color: #d4af37;
+}
+
 .expandIcon {
   font-size: 1rem;
   color: #8b6914;
@@ -328,6 +436,15 @@
 }
 
 @media (max-width: 768px) {
+  .main {
+    padding-top: 4rem;
+  }
+
+  .topActions {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+
   .keyboardHints {
     display: none;
   }
@@ -371,6 +488,10 @@
 }
 
 @media (max-width: 480px) {
+  .header {
+    margin-top: 2rem;
+  }
+
   .title {
     font-size: 2rem;
   }
@@ -386,7 +507,7 @@
 
 @media (max-width: 600px) {
   .main {
-    padding: 48px 24px;
+    padding: 48px 0px;
   }
 
   .intro {
