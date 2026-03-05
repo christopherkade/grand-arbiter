@@ -91,7 +91,7 @@ export default function Home() {
       setSuggestion(data.suggestion || "");
       // Auto-expand all results when new search is performed
       const newExpanded = new Set<string>(
-        (data.results || []).map((rule: RuleSection) => rule.id)
+        (data.results || []).map((rule: RuleSection) => rule.id),
       );
       setExpandedRules(newExpanded);
     } catch (error) {
@@ -135,7 +135,7 @@ export default function Home() {
 
     const regex = new RegExp(
       `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-      "gi"
+      "gi",
     );
     const parts = text.split(regex);
 
@@ -146,14 +146,13 @@ export default function Home() {
         </mark>
       ) : (
         part
-      )
+      ),
     );
   };
 
   const quickKeywords = [
     "Trample",
     "Flying",
-    "Commander",
     "Hexproof",
     "Deathtouch",
     "Vigilance",
