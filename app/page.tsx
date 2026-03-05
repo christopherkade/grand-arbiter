@@ -245,6 +245,11 @@ export default function Home() {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
+        <TopActionsNav
+          currentScreen="search"
+          favoriteCount={favoriteRules.length}
+        />
+
         <SiteHeader
           subtitle={
             <>
@@ -252,11 +257,6 @@ export default function Home() {
               Search for any keyword to find relevant rule sections instantly.
             </>
           }
-        />
-
-        <TopActionsNav
-          currentScreen="search"
-          favoriteCount={favoriteRules.length}
         />
 
         <SearchControls

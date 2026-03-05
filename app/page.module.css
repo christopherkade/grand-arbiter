@@ -15,7 +15,6 @@
   flex-direction: column;
   align-items: center;
   gap: 2rem;
-  padding-top: 3.5rem;
 }
 
 .header {
@@ -81,12 +80,10 @@
 }
 
 .topActions {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 20;
+  align-self: stretch;
   display: flex;
-  flex-direction: column;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
@@ -436,15 +433,6 @@
 }
 
 @media (max-width: 768px) {
-  .main {
-    padding-top: 4rem;
-  }
-
-  .topActions {
-    top: 0.75rem;
-    right: 0.75rem;
-  }
-
   .keyboardHints {
     display: none;
   }
