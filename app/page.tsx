@@ -177,6 +177,12 @@ export default function Home() {
         } else if (event.key === "Enter" && focusedRuleIndex >= 0) {
           event.preventDefault();
           toggleRuleExpansion(results[focusedRuleIndex].id);
+        } else if (event.key.toLowerCase() === "f" && focusedRuleIndex >= 0) {
+          event.preventDefault();
+          const focusedRule = results[focusedRuleIndex];
+          if (focusedRule) {
+            toggleFavoriteRule(focusedRule);
+          }
         }
       }
     };

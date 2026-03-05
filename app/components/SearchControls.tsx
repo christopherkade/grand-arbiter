@@ -58,6 +58,9 @@ export function SearchControls({
           <span className={styles.hint}>
             Press <kbd>Esc</kbd> to clear
           </span>
+          <span className={styles.hint}>
+            Press <kbd>F</kbd> to favorite selected rule
+          </span>
         </div>
       )}
 
