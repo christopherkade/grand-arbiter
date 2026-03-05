@@ -1,14 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
 interface RuleSection {
   id: string;
   title: string;
   content: string;
 }
 
-// Cache for parsed rules to avoid re-parsing on every request
+// Cache for parsed rules to avoid re-parsing
 let rulesCache: RuleSection[] | null = null;
 
 function parseRules(content: string): RuleSection[] {
@@ -184,30 +180,30 @@ function findSuggestion(rules: RuleSection[], searchTerm: string): string | unde
   return bestMatch || undefined;
 }
 
-export async function GET(request: NextRequest) {
+// Load rules from public folder
+async function loadRules(): Promise<RuleSection[]> {
+  if (rulesCache) {
+    return rulesCache;
+  }
+  
   try {
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q') || '';
-    
-    if (!query.trim()) {
-      return NextResponse.json({ results: [], suggestion: undefined });
+    const response = await fetch('/rules.txt');
+    if (!response.ok) {
+      throw new Error('Failed to load rules');
     }
-    
-    // Load and parse rules if not cached
-    if (!rulesCache) {
-      const rulesPath = path.join(process.cwd(), 'RULES.txt');
-      const rulesContent = fs.readFileSync(rulesPath, 'utf-8');
-      rulesCache = parseRules(rulesContent);
-    }
-    
-    const { results, suggestion } = searchRules(rulesCache, query);
-    
-    return NextResponse.json({ results, suggestion });
+    const content = await response.text();
+    rulesCache = parseRules(content);
+    return rulesCache;
   } catch (error) {
-    console.error('Search API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to search rules' },
-      { status: 500 }
-    );
+    console.error('Failed to load rules:', error);
+    return [];
   }
 }
+
+// Main search function for client-side use
+export async function clientSearch(query: string): Promise<{ results: RuleSection[], suggestion?: string }> {
+  const rules = await loadRules();
+  return searchRules(rules, query);
+}
+
+export type { RuleSection };

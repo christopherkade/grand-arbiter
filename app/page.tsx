@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import styles from "./page.module.css";
-
-interface RuleSection {
-  id: string;
-  title: string;
-  content: string;
-}
+import { clientSearch, type RuleSection } from "../lib/search";
 
 export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,10 +86,7 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/search?q=${encodeURIComponent(query)}`
-      );
-      const data = await response.json();
+      const data = await clientSearch(query);
       setResults(data.results || []);
       setSuggestion(data.suggestion || "");
       // Auto-expand all results when new search is performed
