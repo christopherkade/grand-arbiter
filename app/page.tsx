@@ -5,7 +5,7 @@ import styles from "./page.module.css";
 import { clientSearch, type RuleSection } from "@/lib/search";
 import { getFavoriteRules, saveFavoriteRules } from "@/lib/favorites";
 import { SiteHeader } from "./components/SiteHeader";
-import { HomeTopActions } from "./components/HomeTopActions";
+import { TopActionsNav } from "./components/TopActionsNav";
 import { SearchControls } from "./components/SearchControls";
 import { SearchStatus } from "./components/SearchStatus";
 import { RuleResultsAccordion } from "./components/RuleResultsAccordion";
@@ -248,7 +248,10 @@ export default function Home() {
           }
         />
 
-        <HomeTopActions favoriteCount={favoriteRules.length} />
+        <TopActionsNav
+          currentScreen="search"
+          favoriteCount={favoriteRules.length}
+        />
 
         <SearchControls
           searchInputRef={searchInputRef}

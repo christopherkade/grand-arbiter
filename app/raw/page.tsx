@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import styles from "../page.module.css";
 import type { RuleSection } from "@/lib/search";
 import { getFavoriteRules } from "@/lib/favorites";
+import { TopActionsNav } from "../components/TopActionsNav";
 
 export default function RawRulesPage() {
   const [favoriteRules] = useState<RuleSection[]>(() => getFavoriteRules());
@@ -12,14 +12,10 @@ export default function RawRulesPage() {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <div className={styles.topActions}>
-          <Link href="/" replace className={styles.favoritesLinkButton}>
-            Back to Search
-          </Link>
-          <Link href="/favorites" className={styles.viewToggleButton}>
-            Favorites ({favoriteRules.length})
-          </Link>
-        </div>
+        <TopActionsNav
+          currentScreen="raw"
+          favoriteCount={favoriteRules.length}
+        />
 
         <div className={styles.rawView}>
           <iframe

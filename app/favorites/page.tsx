@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import styles from "../page.module.css";
 import type { RuleSection } from "@/lib/search";
 import { getFavoriteRules, saveFavoriteRules } from "@/lib/favorites";
+import { TopActionsNav } from "../components/TopActionsNav";
 
 export default function FavoritesPage() {
   const [favoriteRules, setFavoriteRules] = useState<RuleSection[]>(() =>
@@ -58,14 +58,10 @@ export default function FavoritesPage() {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <div className={styles.topActions}>
-          <Link href="/raw" className={styles.viewToggleButton}>
-            View Raw Rules
-          </Link>
-          <Link href="/" replace className={styles.favoritesLinkButton}>
-            Back to Search
-          </Link>
-        </div>
+        <TopActionsNav
+          currentScreen="favorites"
+          favoriteCount={favoriteRules.length}
+        />
 
         <div className={styles.header}>
           <h1 className={styles.title}>Grand Arbiter</h1>
